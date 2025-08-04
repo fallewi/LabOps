@@ -77,7 +77,7 @@ function generateQuestionContent(question) {
                 <div class="question-header">
                     
                     <div class="mb-3">
-                        <strong>Solve this question on instance:</strong> <span class="inline-code">ssh ${machineHostname}</span></span>
+                        <strong>Solve this question on instance:</strong> <span class="inline-code">ssh datascientest-machine</span></span>
                     </div>
                     
                     <div class="mb-3">
