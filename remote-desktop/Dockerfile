@@ -1,5 +1,5 @@
 # Base Image
-FROM nishanb/DATASCIENTEST LABS-simulator-vnc-base:v3
+FROM fallewi/vnc-dst:latest
 
 # Switch to root user for installations
 USER 0

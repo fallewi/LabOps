@@ -5,7 +5,7 @@ class VNCService {
         this.config = {
             host: config.host || 'remote-desktop-service',
             port: config.port || 6901,
-            password: config.password || 'datascientest'
+            password: config.password || 'bakku-the-wizard'
         };
 
         this.vncProxyConfig = {

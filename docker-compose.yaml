@@ -1,6 +1,6 @@
 services:
   remote-desktop:
-    image: nishanb/DATASCIENTEST LABS-simulator-remote-desktop:latest
+    image: fallewi/desktop:latest
     build:
       context: ./remote-desktop
     hostname: terminal
@@ -30,7 +30,7 @@ services:
 
 
   webapp:
-    image: nishanb/DATASCIENTEST LABS-simulator-webapp:latest
+    image: fallewi/webapp:latest
     build:
       context: ./app
     expose:
@@ -61,7 +61,7 @@ services:
 
  
   nginx:
-    image: nishanb/DATASCIENTEST LABS-simulator-nginx:latest
+    image: fallewi/labops-dst-nginx:latest
     build:
       context: ./nginx
     depends_on:
@@ -89,7 +89,7 @@ services:
       - datascientest-net
 
   jumphost:
-    image: nishanb/DATASCIENTEST LABS-simulator-jumphost:latest
+    image: fallewi/jumphost:latest
     build:
       context: ./jumphost
     hostname: datascientest-machine
@@ -115,7 +115,7 @@ services:
       retries: 3
       
   remote-terminal:
-    image: nishanb/DATASCIENTEST LABS-simulator-remote-terminal:latest
+    image: fallewi/terminal:latest
     build:
       context: ./remote-terminal
     hostname: remote-terminal
@@ -139,7 +139,7 @@ services:
       
 
   k8s-api-server:  
-    image: nishanb/DATASCIENTEST LABS-simulator-cluster:latest
+    image: fallewi/cluster:latest
     build:
       context: ./kind-cluster
     container_name: kind-cluster
@@ -192,7 +192,7 @@ services:
       retries: 3
 
   facilitator:
-    image: nishanb/DATASCIENTEST LABS-simulator-facilitator:latest
+    image: fallewi/labops-dst-facilitator:latest
     build:
       context: ./facilitator
       dockerfile: Dockerfile

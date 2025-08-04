@@ -1,5 +1,5 @@
 /**
- * Feedback module for DATASCIENTEST LABS Simulator
+ * Feedback module for CK-X Simulator
  * Handles displaying feedback prompts and notifications
  */
 
