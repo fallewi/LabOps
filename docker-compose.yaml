@@ -1,0 +1,238 @@
+services:
+  remote-desktop:
+    image: nishanb/DATASCIENTEST LABS-simulator-remote-desktop:latest
+    build:
+      context: ./remote-desktop
+    hostname: terminal
+    expose:
+      - "5901"  
+      - "6901"  
+    environment:
+      - VNC_PW=datascientest
+      - VNC_PASSWORD=datascientest
+      - VNC_VIEW_ONLY=false
+      - VNC_RESOLUTION=1280x800
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6901/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - datascientest-net
+
+
+  webapp:
+    image: nishanb/DATASCIENTEST LABS-simulator-webapp:latest
+    build:
+      context: ./app
+    expose:
+      - "3000"  
+    environment:
+      - VNC_SERVICE_HOST=remote-desktop
+      - VNC_SERVICE_PORT=6901
+      - VNC_PASSWORD=datascientest
+      - SSH_HOST=remote-terminal
+      - SSH_PORT=22
+      - SSH_USER=datascientest
+      - SSH_PASSWORD=password
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - datascientest-net
+
+ 
+  nginx:
+    image: nishanb/DATASCIENTEST LABS-simulator-nginx:latest
+    build:
+      context: ./nginx
+    depends_on:
+      - webapp
+      - remote-desktop
+      - remote-terminal
+      - facilitator
+      - k8s-api-server
+    ports:
+      - "80:80"  
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - datascientest-net
+
+  jumphost:
+    image: nishanb/DATASCIENTEST LABS-simulator-jumphost:latest
+    build:
+      context: ./jumphost
+    hostname: datascientest-machine
+    privileged: true
+
+    expose:
+      - "22"  
+    volumes:
+      - kube-config:/home/datascientest/.kube  
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - datascientest-net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      
+  remote-terminal:
+    image: nishanb/DATASCIENTEST LABS-simulator-remote-terminal:latest
+    build:
+      context: ./remote-terminal
+    hostname: remote-terminal
+    expose:
+      - "22"  
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    networks:
+      - datascientest-net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      
+
+  k8s-api-server:  
+    image: nishanb/DATASCIENTEST LABS-simulator-cluster:latest
+    build:
+      context: ./kind-cluster
+    container_name: kind-cluster
+    hostname: k8s-api-server
+    privileged: true  
+    expose:
+      - "6443:6443" 
+      - "22"
+    volumes:
+      - kube-config:/home/datascientest/.kube  
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    networks:
+      - datascientest-net
+    healthcheck:
+      test: ["CMD", "ls", "/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+
+  redis:
+    image: redis:alpine
+    hostname: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    expose:
+      - "6379"
+    restart: unless-stopped
+    networks:
+      - datascientest-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  facilitator:
+    image: nishanb/DATASCIENTEST LABS-simulator-facilitator:latest
+    build:
+      context: ./facilitator
+      dockerfile: Dockerfile
+    hostname: facilitator
+    expose:
+      - "3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=prod
+      - SSH_HOST=jumphost
+      - SSH_PORT=22
+      - SSH_USERNAME=datascientest
+      - LOG_LEVEL=info
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TRACK_METRICS=true 
+    restart: unless-stopped
+    depends_on:
+      - jumphost
+      - redis
+    networks:
+      - datascientest-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  datascientest-net:
+    name: datascientest-net
+    driver: bridge
+
+volumes:
+  kube-config:  
